@@ -1,0 +1,4 @@
+.venv
+.idea
+utils/api.json
+*/__pycache__/*
