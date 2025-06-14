@@ -2,6 +2,7 @@ import requests
 import statistics
 import regex as re
 import pandas as pd
+from utils.ft_api import FTApi
 from bs4 import BeautifulSoup
 from pandas.core.interchange.dataframe_protocol import DataFrame
 
@@ -11,9 +12,11 @@ class DataManager:
         if data_type == "scrapping":
             # Default url contains ai jobs applications located in France
             self.URL = "https://aijobs.net/?cou=78&key=&exp=&sal="
-            self.URL_PREFIX = re.findall('https:\/\/[^\/]+\/', url)[0]
+            self.URL_PREFIX = re.findall('https:\/\/[^\/]+\/', self.URL)[0]
         elif data_type == "API":
-            pass
+            api = FTApi()
+            self.apiID = api.get_id()
+            self.apiSecretKey = api.get_secret_key()
 
         self.data_df = pd.DataFrame()
 
@@ -122,7 +125,83 @@ class DataManager:
 
 
     def fetch_api_data(self):
-        pass
+        url = "https://francetravail.io/connexion/oauth2/access_token?realm=partenaire"
+
+        payload = f'grant_type=client_credentials&client_id={self.apiID}&client_secret={self.apiSecretKey}&scope=api_offresdemploiv2 o2dsoffre'
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+
+        response = requests.post(url, headers=headers, data=payload)
+
+        if response.status_code != 200:
+            print(f"Erreur: {response.status_code}")
+            print(response.json())
+
+        access_token = response.json().get('access_token')
+
+        job_limit = 50
+        api_url = f"https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search?limit={job_limit}"
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            "Accept": "application/json"
+        }
+
+        params = {
+            "motclef": ["data", "intelligence artificielle", "ia"]
+        }
+
+        print("Started fetching data from API")
+        response = requests.get(api_url, params=params, headers=headers)
+        offres = response.json()
+
+        for offre in offres['resultats']:
+            job = self.structure_api_data(offre)
+            self.data_df = pd.concat([self.data_df, job], ignore_index=True)
+        print("Finished fetching data from API")
+
+
+    def structure_api_data(self, offer):
+        job_params = {
+            "job_link": offer['origineOffre']['urlOrigine'],
+            "job_title": offer['intitule'],
+            "job_company": None,
+            "job_location": offer['lieuTravail']['libelle'],
+            "job_contract": offer['typeContratLibelle'],
+            "job_hours": None,
+            "job_level": offer['experienceLibelle'],
+            "job_salary": None
+        }
+
+        # Transform job contract hours
+        if offer['contexteTravail'] is not None and offer['contexteTravail']['horaires'] is not None:
+            job_hours = re.findall('\d+', offer['contexteTravail']['horaires'][0])
+            if job_hours is not None and len(job_hours) > 0:
+                job_params['job_hours'] = int(job_hours[0])
+
+        # Transform job salary
+        if offer['salaire'].get('commentaire', None) is not None:
+            # If salaire has comments (ex: A négocier) then we make job_salary = None
+            job_params['job_salary'] = None
+        else:
+            # Salary must be saved in yearly rate
+            job_salary = offer['salaire']['libelle']
+            salary_value = re.findall('\d+\.\d+', job_salary)
+
+            if salary_value is not None and len(salary_value) > 0:
+                salary = salary_value[0]
+                if re.search('Horaire', job_salary):
+                    job_params['job_salary'] = round(float(salary) * job_params['job_hours'] * 52, 2)
+                elif re.search('Mensuel', job_salary):
+                    job_params['job_salary'] = float(salary) * 12
+                elif re.search('Annuel', job_salary):
+                    job_params['job_salary'] = float(salary)
+                else:
+                    job_params['job_salary'] = None
+            else:
+                job_params['job_salary'] = None
+
+        return pd.DataFrame(job_params, index=[0])
 
 
     def get_csv_data(self, url='data/raw/data.csv'):
