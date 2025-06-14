@@ -13,7 +13,8 @@ options = "hmo:"
 long_options = ["Help",
                 "My_file",
                 "Output=",
-                "FS_page_data"]
+                "FS_page_data",
+                "FS_api_data"]
 
 # Objects
 s3 = ""
@@ -36,12 +37,15 @@ try:
             print("Enabling special output mode (% s)" % currentValue)
 
         elif currentArgument in ("-f", "--FS_page_data"):
-            print(f"Starting fetch and save command :")
+            print(f"Starting fetch and save command of scrapping data :")
             dataManager = DataManager()
             # Scrapping data
             dataManager.fetch_site_data()
             dataManager.save_data_to_csv(path="data/raw/scrapping_data.csv")
 
+        elif currentArgument in ("-s", "--FS_api_data"):
+            print(f"Starting fetch and save command of API data :")
+            dataManager = DataManager(data_type="API")
             # API data
             dataManager.fetch_api_data()
 

@@ -7,10 +7,14 @@ from pandas.core.interchange.dataframe_protocol import DataFrame
 
 
 class DataManager:
-    def __init__(self, url="https://aijobs.net/?cou=78&key=&exp=&sal="):
-        # Default url contains ai jobs applications located in France
-        self.URL = url
-        self.URL_PREFIX = re.findall('https:\/\/[^\/]+\/', url)[0]
+    def __init__(self, data_type="scrapping"):
+        if data_type == "scrapping":
+            # Default url contains ai jobs applications located in France
+            self.URL = "https://aijobs.net/?cou=78&key=&exp=&sal="
+            self.URL_PREFIX = re.findall('https:\/\/[^\/]+\/', url)[0]
+        elif data_type == "API":
+            pass
+
         self.data_df = pd.DataFrame()
 
 
@@ -117,7 +121,7 @@ class DataManager:
                     self.data_df = pd.concat([self.data_df, page_data], ignore_index=True)
 
 
-    def fetch_api_data(self, url=''):
+    def fetch_api_data(self):
         pass
 
 
