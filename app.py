@@ -38,7 +38,7 @@ try:
 
         elif currentArgument in ("-f", "--FS_page_data"):
             print(f"Starting fetch and save command of scrapping data :")
-            dataManager = DataManager()
+            dataManager = DataManager(data_type="scrapping")
             # Scrapping data
             dataManager.fetch_site_data()
             dataManager.save_data_to_csv(path="data/raw/scrapping_data.csv")
@@ -48,6 +48,7 @@ try:
             dataManager = DataManager(data_type="API")
             # API data
             dataManager.fetch_api_data()
+            dataManager.save_data_to_csv(path="data/raw/api_data.csv")
 
 
 except getopt.error as err:
