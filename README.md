@@ -30,3 +30,14 @@ Installation des dépendances :
 ```bash
 pip install -r requirements.txt
 ```
+
+## Commands
+Fetch and save page data
+```bash
+py app.py --FS_page_data
+```
+
+Fetch and save api data
+```bash
+py app.py --FS_api_data
+```
