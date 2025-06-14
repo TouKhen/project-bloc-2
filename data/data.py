@@ -140,7 +140,7 @@ class DataManager:
 
         access_token = response.json().get('access_token')
 
-        job_limit = 50
+        job_limit = 100
         api_url = f"https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search?limit={job_limit}"
         headers = {
             'Authorization': f'Bearer {access_token}',
