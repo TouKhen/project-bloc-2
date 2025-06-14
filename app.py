@@ -14,7 +14,8 @@ long_options = ["Help",
                 "My_file",
                 "Output=",
                 "FS_page_data",
-                "FS_api_data"]
+                "FS_api_data",
+                "RDS"]
 
 # Objects
 s3 = ""
@@ -49,6 +50,10 @@ try:
             # API data
             dataManager.fetch_api_data()
             dataManager.save_data_to_csv(path="data/raw/api_data.csv")
+
+        elif currentArgument in ("-r", "--RDS"):
+            aws = AWSManager(type='rds')
+            aws.create_table_rds()
 
 
 except getopt.error as err:
